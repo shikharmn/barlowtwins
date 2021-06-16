@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+import lightly
+import torchvision
 
 # code for kNN prediction from here:
 # https://colab.research.google.com/github/facebookresearch/moco/blob/colab-notebook/colab/moco_cifar10_demo.ipynb
@@ -98,3 +100,60 @@ class BenchmarkModule(pl.LightningModule):
             if acc > self.max_accuracy:
                 self.max_accuracy = acc
             self.log('kNN_accuracy', acc * 100.0, prog_bar=True)
+
+def data_helper(config):
+    # Use SimCLR augmentations, additionally, disable blur
+    collate_fn = lightly.data.SimCLRCollateFunction(
+        input_size=32,
+        gaussian_blur=0.,
+    )
+
+    # No additional augmentations for the test set
+    test_transforms = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize(
+            mean=lightly.data.collate.imagenet_normalize['mean'],
+            std=lightly.data.collate.imagenet_normalize['std'],
+        )
+    ])
+
+    dataset_train_ssl = lightly.data.LightlyDataset.from_torch_dataset(
+        torchvision.datasets.CIFAR10(
+            root='data',
+            train=True,
+            download=True))
+    dataset_train_kNN = lightly.data.LightlyDataset.from_torch_dataset(torchvision.datasets.CIFAR10(
+        root='data',
+        train=True,
+        transform=test_transforms,
+        download=True))
+    dataset_test = lightly.data.LightlyDataset.from_torch_dataset(torchvision.datasets.CIFAR10(
+        root='data',
+        train=False,
+        transform=test_transforms,
+        download=True))
+
+    dataloader_train_ssl = torch.utils.data.DataLoader(
+        dataset_train_ssl,
+        batch_size=config['batch_size'],
+        shuffle=True,
+        collate_fn=collate_fn,
+        drop_last=True,
+        num_workers=config['num_workers']
+    )
+    dataloader_train_kNN = torch.utils.data.DataLoader(
+        dataset_train_kNN,
+        batch_size=config['batch_size'],
+        shuffle=False,
+        drop_last=False,
+        num_workers=config['num_workers']
+    )
+    dataloader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=config['batch_size'],
+        shuffle=False,
+        drop_last=False,
+        num_workers=config['num_workers']
+    )
+
+    return dataloader_train_ssl, dataloader_train_kNN, dataloader_test
