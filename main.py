@@ -4,7 +4,7 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 import yaml
 
-from models import BarlowTwins
+from models import BarlowTwins, BarlowTwinsMmt
 from utils import data_helper
 
 # Logging and other misc configuration
@@ -27,10 +27,10 @@ device = 'cuda' if gpus else 'cpu'
 dataloader_train_ssl, dataloader_train_kNN, dataloader_test = data_helper(config)
 
 # Set up model and training
-model = BarlowTwins(config, dataloader_train_kNN, gpus=gpus)
+model = BarlowTwinsMmt(config, dataloader_train_kNN, gpus=gpus)
 wandb.watch(model, log_freq=100)
 
-trainer = pl.Trainer(max_epochs=20, gpus=gpus,
+trainer = pl.Trainer(max_epochs=config['max_epoch'], gpus=gpus,
                     progress_bar_refresh_rate=20,
                     fast_dev_run=False, logger=wandb_logger)
 trainer.fit(
