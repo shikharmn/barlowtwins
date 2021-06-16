@@ -47,15 +47,15 @@ class BenchmarkModule(pl.LightningModule):
     We can access the highest accuracy during a kNN prediction using the 
     max_accuracy attribute.
     """
-    def __init__(self, dataloader_kNN, gpus, classes, knn_k, knn_t):
+    def __init__(self, config, dataloader_kNN, gpus):
         super().__init__()
         self.backbone = nn.Module()
         self.max_accuracy = 0.0
         self.dataloader_kNN = dataloader_kNN
         self.gpus = gpus
-        self.classes = classes
-        self.knn_k = knn_k
-        self.knn_t = knn_t
+        self.classes = config['classes']
+        self.knn_k = config['knn_k']
+        self.knn_t = config['knn_t']
 
     def training_epoch_end(self, outputs):
         # update feature bank at the end of each training epoch

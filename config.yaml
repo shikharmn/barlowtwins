@@ -1,0 +1,7 @@
+batch_size: 512
+classes: 10
+knn_k: 200
+knn_t: 0.1
+max_epochs: 800
+num_workers: 4
+seed: 1
