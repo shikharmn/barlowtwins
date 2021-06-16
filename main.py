@@ -1,11 +1,6 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-import lightly
 import wandb
 import yaml
 
@@ -35,9 +30,9 @@ dataloader_train_ssl, dataloader_train_kNN, dataloader_test = data_helper(config
 model = BarlowTwins(config, dataloader_train_kNN, gpus=gpus)
 wandb.watch(model, log_freq=100)
 
-trainer = pl.Trainer(max_epochs=25, gpus=gpus,
+trainer = pl.Trainer(max_epochs=20, gpus=gpus,
                     progress_bar_refresh_rate=20,
-                    fast_dev_run=True, logger=wandb_logger)
+                    fast_dev_run=False, logger=wandb_logger)
 trainer.fit(
     model,
     train_dataloader=dataloader_train_ssl,
