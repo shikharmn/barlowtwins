@@ -55,8 +55,8 @@ class AddMomentum(nn.Module, _MomentumEncoderMixin):
     def __init__(self,
                  backbone: nn.Module,
                  num_ftrs: int = 2048,
-                 hidden_dim: int = 4096,
-                 out_dim: int = 256,
+                 hidden_dim: int = 2048,
+                 out_dim: int = 2048,
                  m: float = 0.99,
                  num_mlp_layers = 3):
 
@@ -112,7 +112,7 @@ class AddMomentum(nn.Module, _MomentumEncoderMixin):
 
         return (z0, p0), (z1, p1)
 
-class BarlowTwinsMmt(BenchmarkModule):
+class MomentumBT(BenchmarkModule):
     def __init__(self, config, dataloader_kNN, gpus):
         super().__init__(config, dataloader_kNN, gpus)
         # create a ResNet backbone and remove the classification head
@@ -133,8 +133,8 @@ class BarlowTwinsMmt(BenchmarkModule):
         self.resnet_simsiam(x)
 
     def training_step(self, batch, batch_idx):
-        (x0, x1), _, _ = batch
-        (z0, p0), (z1, p1) = self.resnet_mmt_bt(x0, x1)
+        x0 = batch[0]
+        (z0, p0), (z1, p1) = self.resnet_mmt_bt(x0, x0)
         # our simsiam model returns both (features + projection head)
         loss = self.criterion(p0, z1) / 2 + self.criterion(p1, z0) / 2
         self.log('train_loss_ssl', loss)
@@ -166,7 +166,7 @@ class BarlowTwinsMmt(BenchmarkModule):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.config['max_epochs'])
         return [optim], [scheduler]
 
-class BarlowTwins(BenchmarkModule):
+class VanillaBT(BenchmarkModule):
     def __init__(self, config, dataloader_kNN, gpus):
         super().__init__(config, dataloader_kNN)
         # create a ResNet backbone and remove the classification head
