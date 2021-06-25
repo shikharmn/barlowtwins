@@ -57,7 +57,7 @@ class AddMomentum(nn.Module, _MomentumEncoderMixin):
                  num_ftrs: int = 2048,
                  hidden_dim: int = 2048,
                  out_dim: int = 2048,
-                 m: float = 0.99,
+                 m: float = 0.999,
                  num_mlp_layers = 3):
 
         super(AddMomentum, self).__init__()
@@ -130,11 +130,11 @@ class MomentumBT(BenchmarkModule):
         self.criterion = BarlowTwinsLoss(device=device)
             
     def forward(self, x):
-        self.resnet_simsiam(x)
+        return self.resnet_mmt_bt(x, x)
 
     def training_step(self, batch, batch_idx):
-        x0 = batch[0]
-        (z0, p0), (z1, p1) = self.resnet_mmt_bt(x0, x0)
+        (x0, x1), _, _ = batch
+        (z0, p0), (z1, p1) = self.resnet_mmt_bt(x0, x1)
         # our simsiam model returns both (features + projection head)
         loss = self.criterion(p0, z1) / 2 + self.criterion(p1, z0) / 2
         self.log('train_loss_ssl', loss)

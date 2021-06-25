@@ -5,6 +5,8 @@ import pytorch_lightning as pl
 import lightly
 import torchvision
 
+from collate import BTCollateFunction
+
 # code for kNN prediction from here:
 # https://colab.research.google.com/github/facebookresearch/moco/blob/colab-notebook/colab/moco_cifar10_demo.ipynb
 def knn_predict(feature, feature_bank, feature_labels, classes: int, knn_k: int, knn_t: float):
@@ -108,14 +110,14 @@ def data_helper(config):
         gaussian_blur=0.,
     )
 
-    train_transforms = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize(
-            mean=lightly.data.collate.imagenet_normalize['mean'],
-            std=lightly.data.collate.imagenet_normalize['std']
-        ),
+    # train_transforms = torchvision.transforms.Compose([
+    #     torchvision.transforms.ToTensor(),
+    #     torchvision.transforms.Normalize(
+    #         mean=lightly.data.collate.imagenet_normalize['mean'],
+    #         std=lightly.data.collate.imagenet_normalize['std']
+    #     ),
 
-    ])
+    # ])
 
     # No additional augmentations for the test set
     test_transforms = torchvision.transforms.Compose([
@@ -130,7 +132,7 @@ def data_helper(config):
         torchvision.datasets.CIFAR10(
             root='data',
             train=True,
-            transform=train_transforms,      # Comment out for regular training
+#            transform=train_transforms,      # Comment out for regular training
             download=True)
             )
 
@@ -152,24 +154,25 @@ def data_helper(config):
 
 # For experimental training without transformations
 
-    dataloader_train_ssl = torch.utils.data.DataLoader(
-        dataset_train_ssl,
-        batch_size=config['batch_size'],
-        shuffle=True,
-        drop_last=True,
-        num_workers=config['num_workers']
-    )
-
-# For standard training, uncomment this and comment the above
-
     # dataloader_train_ssl = torch.utils.data.DataLoader(
     #     dataset_train_ssl,
     #     batch_size=config['batch_size'],
     #     shuffle=True,
-    #     collate_fn=collate_fn,
     #     drop_last=True,
     #     num_workers=config['num_workers']
     # )
+
+# For standard training, uncomment this and comment the above
+
+    dataloader_train_ssl = torch.utils.data.DataLoader(
+        dataset_train_ssl,
+        batch_size=config['batch_size'],
+        shuffle=True,
+        collate_fn=collate_fn,
+        drop_last=True,
+        num_workers=config['num_workers']
+    )
+
     dataloader_train_kNN = torch.utils.data.DataLoader(
         dataset_train_kNN,
         batch_size=config['batch_size'],

@@ -30,7 +30,7 @@ dataloader_train_ssl, dataloader_train_kNN, dataloader_test = data_helper(config
 model = MomentumBT(config, dataloader_train_kNN, gpus=gpus)
 wandb.watch(model, log_freq=100)
 
-trainer = pl.Trainer(max_epochs=config['max_epochs'], gpus=gpus,
+trainer = pl.Trainer(max_epochs=622, gpus=gpus,
                     progress_bar_refresh_rate=100,
                     fast_dev_run=False, logger=wandb_logger)
 
