@@ -4,6 +4,7 @@ import lightly
 
 from loss import BarlowTwinsLoss
 from utils import BenchmarkModule
+from random import sample
 
 from lightly.models._momentum import _MomentumEncoderMixin
 from lightly.models.batchnorm import get_norm_layer
@@ -49,7 +50,6 @@ def _projection_mlp(in_dims: int,
 
     return projection
 
-
 class AddMomentum(nn.Module, _MomentumEncoderMixin):
 
     def __init__(self,
@@ -57,7 +57,7 @@ class AddMomentum(nn.Module, _MomentumEncoderMixin):
                  num_ftrs: int = 2048,
                  hidden_dim: int = 2048,
                  out_dim: int = 2048,
-                 m: float = 0.999,
+                 m: float = 0.99,
                  num_mlp_layers = 3):
 
         super(AddMomentum, self).__init__()
@@ -123,19 +123,19 @@ class MomentumBT(BenchmarkModule):
             *list(resnet.children())[:-1],
             nn.AdaptiveAvgPool2d(1),
         )
-        # create a simsiam model based on ResNet
-        # note that Barlowtwins has the same architecture
+
         self.resnet_mmt_bt = \
             AddMomentum(self.backbone, num_ftrs=512, num_mlp_layers=3)
         self.criterion = BarlowTwinsLoss(device=device)
             
     def forward(self, x):
-        return self.resnet_mmt_bt(x, x)
+        return self.backbone(x)
 
     def training_step(self, batch, batch_idx):
         (x0, x1), _, _ = batch
+
         (z0, p0), (z1, p1) = self.resnet_mmt_bt(x0, x1)
-        # our simsiam model returns both (features + projection head)
+        # Symmetrized loss function
         loss = self.criterion(p0, z1) / 2 + self.criterion(p1, z0) / 2
         self.log('train_loss_ssl', loss)
         return loss
@@ -165,6 +165,12 @@ class MomentumBT(BenchmarkModule):
                                 momentum=0.9, weight_decay=5e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.config['max_epochs'])
         return [optim], [scheduler]
+
+    def get_view(self):
+        id1, id2 = sample([0,1,2,3], 2)
+        view1_idx = range(id1 * 3, id1 * 3 + 3)
+        view2_idx = range(id2 * 3, id2 * 3 + 3)
+        return view1_idx, view2_idx
 
 class VanillaBT(BenchmarkModule):
     def __init__(self, config, dataloader_kNN, gpus):

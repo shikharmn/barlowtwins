@@ -53,7 +53,8 @@ class BenchmarkModule(pl.LightningModule):
     """
     def __init__(self, config, dataloader_kNN, gpus):
         super().__init__()
-        self.backbone = nn.Module()
+        self.backbone1 = nn.Module()
+        self.backbone2 = nn.Module()
         self.max_accuracy = 0.0
         self.dataloader_kNN = dataloader_kNN
         self.gpus = gpus
@@ -63,7 +64,8 @@ class BenchmarkModule(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         # update feature bank at the end of each training epoch
-        self.backbone.eval()
+        self.backbone1.eval()
+        self.backbone2.eval()
         self.feature_bank = []
         self.targets_bank = []
         with torch.no_grad():
@@ -72,19 +74,24 @@ class BenchmarkModule(pl.LightningModule):
                 if self.gpus > 0:
                     img = img.cuda()
                     target = target.cuda()
-                feature = self.backbone(img).squeeze()
+                feat1 = self.backbone1(img[:,0].unsqueeze(1)).squeeze()
+                feat2 = self.backbone2(img[:,[1,2]]).squeeze()
+                feature = torch.cat((feat1, feat2), dim=1)
                 feature = F.normalize(feature, dim=1)
                 self.feature_bank.append(feature)
                 self.targets_bank.append(target)
         self.feature_bank = torch.cat(self.feature_bank, dim=0).t().contiguous()
         self.targets_bank = torch.cat(self.targets_bank, dim=0).t().contiguous()
-        self.backbone.train()
+        self.backbone1.train()
+        self.backbone2.train()
 
     def validation_step(self, batch, batch_idx):
         # we can only do kNN predictions once we have a feature bank
         if hasattr(self, 'feature_bank') and hasattr(self, 'targets_bank'):
             images, targets, _ = batch
-            feature = self.backbone(images).squeeze()
+            feat1 = self.backbone1(images[:,0].unsqueeze(1)).squeeze()
+            feat2 = self.backbone2(images[:,[1,2]]).squeeze()
+            feature = torch.cat((feat1, feat2), dim=1)
             feature = F.normalize(feature, dim=1)
             pred_labels = knn_predict(feature, self.feature_bank, self.targets_bank, self.classes, self.knn_k, self.knn_t)
             num = images.size(0)
@@ -105,7 +112,7 @@ class BenchmarkModule(pl.LightningModule):
 
 def data_helper(config):
     # Use SimCLR augmentations, additionally, disable blur
-    collate_fn = lightly.data.SimCLRCollateFunction(
+    collate_fn = BTCollateFunction(
         input_size=32,
         gaussian_blur=0.,
     )
@@ -189,3 +196,11 @@ def data_helper(config):
     )
 
     return dataloader_train_ssl, dataloader_train_kNN, dataloader_test
+
+def get_ydbdr_conv(device='cpu'):
+    conv1 = nn.Conv2d(3,3,1,bias=False)
+    weight = torch.tensor([[0.299,0.587,0.114],[-0.45, -0.883, 1.333],[-1.333, 1.116, 0.217]]).reshape(3,3,1,1)
+    weight = weight.expand(conv1.weight.size())
+    conv1.weight = torch.nn.Parameter(weight)
+    conv1.requires_grad = False
+    return conv1.to(device=device)

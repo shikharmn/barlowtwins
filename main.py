@@ -4,7 +4,7 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 import yaml
 
-from models import MomentumBT
+from models_view import VanillaBT
 from utils import data_helper
 
 # Logging and other misc configuration
@@ -27,12 +27,15 @@ device = 'cuda' if gpus else 'cpu'
 dataloader_train_ssl, dataloader_train_kNN, dataloader_test = data_helper(config)
 
 # Set up model and training
-model = MomentumBT(config, dataloader_train_kNN, gpus=gpus)
+model = VanillaBT(config, dataloader_train_kNN, gpus=gpus)
 wandb.watch(model, log_freq=100)
 
-trainer = pl.Trainer(max_epochs=622, gpus=gpus,
+#check_path = "/home/shkhrmohan94_gmail_com/barlowtwins/wandb/run-20210706_160757-1dmzj5yj/files/mlo-ssl/1dmzj5yj/checkpoints/epoch=189-step=18429.ckpt"
+
+trainer = pl.Trainer(max_epochs=650, gpus=gpus,
                     progress_bar_refresh_rate=100,
-                    fast_dev_run=False, logger=wandb_logger)
+                    fast_dev_run=False, logger=wandb_logger,
+                    )
 
 #trainer = pl.Trainer(resume_from_checkpoint=check_path)
 

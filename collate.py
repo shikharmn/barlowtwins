@@ -117,20 +117,20 @@ class ImageCollateFunction(BaseCollateFunction):
 
     def __init__(self,
                  input_size: int = 64,
-                 cj_prob: float = 0.8,
-                 cj_bright: float = 0.7,
-                 cj_contrast: float = 0.7,
+                 cj_prob: float = 0.0,
+                 cj_bright: float = 0.0,
+                 cj_contrast: float = 0.0,
                  cj_sat: float = 0.7,
                  cj_hue: float = 0.2,
                  min_scale: float = 0.15,
                  random_gray_scale: float = 0.2,
                  gaussian_blur: float = 0.5,
                  kernel_size: float = 0.1,
-                 vf_prob: float = 0.0,
+                 vf_prob: float = 0.3,
                  hf_prob: float = 0.5,
-                 rr_prob: float = 0.0,
-                 sol_prob: float = 0.3,
-                 sol_threshold: float = 0.25,
+                 rr_prob: float = 0.2,
+                 sol_prob: float = 0.0,
+                 sol_threshold: float = 0,
                  normalize: dict = imagenet_normalize):
 
         if isinstance(input_size, tuple):
@@ -214,9 +214,9 @@ class BTCollateFunction(ImageCollateFunction):
                  kernel_size: float = 0.1,
                  vf_prob: float = 0.3,
                  hf_prob: float = 0.5,
-                 rr_prob: float = 0.0,
+                 rr_prob: float = 0.2,
                  sol_threshold: float = 0.25,
-                 sol_prob: float = 0.5, 
+                 sol_prob: float = 0.0, 
                  normalize: dict = imagenet_normalize):
 
         super(BTCollateFunction, self).__init__(
