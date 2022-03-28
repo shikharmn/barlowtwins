@@ -24,6 +24,6 @@ Accuracy             |  Loss
 ![](docs/accuracy_logs.png)  |  ![](docs/loss_logs.png)
 
 
-### Paper
+### Report
 
-[Project Report](https://arxiv.org/pdf/2103.03230.pdf)
+[Project Report](https://drive.google.com/file/d/1xBrCIrN6SAHWOYdC5UGqNsqx4hK0gU0I/view?usp=sharing)
